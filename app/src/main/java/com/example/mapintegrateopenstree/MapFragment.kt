@@ -1,7 +1,6 @@
 package com.example.mapintegrateopenstree
 
 import android.content.Context.MODE_PRIVATE
-import android.graphics.BitmapFactory
 import android.graphics.Rect
 import android.os.Bundle
 import android.util.Log
@@ -36,6 +35,9 @@ class MapFragment : Fragment() {
 
     private lateinit var mMyLocationOverlay: MyLocationNewOverlay
 
+    private var _lonLat: String? = null
+    private val lonLat get() = _lonLat!!
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Configuration.getInstance().load(
@@ -45,8 +47,7 @@ class MapFragment : Fragment() {
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View? {
         // Inflate the layout for this fragment
         _binding = FragmentMapBinding.inflate(layoutInflater, container, false)
@@ -61,22 +62,21 @@ class MapFragment : Fragment() {
 
         initializeMap()
 
+        initializeListener()
+
+    }
+
+    private fun initializeListener() {
+        binding.getLocationBtn.setOnClickListener {
+            binding.location.text = lonLat
+        }
     }
 
     private fun initializeMap() {
         binding.osmMap.apply {
 
             //disable multiple map
-            setScrollableAreaLimitDouble(BoundingBox(85.0, 180.0, -85.0, -180.0))
-            maxZoomLevel = 20.0
-            minZoomLevel = 4.0
-            isHorizontalMapRepetitionEnabled = false
-            isVerticalMapRepetitionEnabled = false
-            setScrollableAreaLimitLatitude(
-                MapView.getTileSystem().maxLatitude,
-                MapView.getTileSystem().minLatitude, 0
-            )
-
+            disableMultiMap()
 
             setTileSource(TileSourceFactory.MAPNIK)
             setMultiTouchControls(true)
@@ -87,10 +87,6 @@ class MapFragment : Fragment() {
                 enableMyLocation()
                 enableFollowLocation()
                 isDrawAccuracyEnabled = true
-
-
-//                _controller.animateTo(startPoint)
-
                 controller.setZoom(6.0)
 
                 addMapListener(object : MapListener {
@@ -106,6 +102,8 @@ class MapFragment : Fragment() {
                             ContextCompat.getDrawable(requireContext(), R.drawable.ic_location)
                         startMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
                         binding.osmMap.overlays.add(startMarker)
+                        _lonLat =
+                            "la ${event?.source?.mapCenter?.latitude} || lo ${event?.source?.mapCenter?.longitude}"
                         Log.e("TAG", "onCreate:la ${event?.source?.mapCenter?.latitude}")
                         Log.e("TAG", "onCreate:lo ${event?.source?.mapCenter?.longitude}")
                         return true
@@ -119,7 +117,19 @@ class MapFragment : Fragment() {
                         return true
                     }
                 })
+
             }
         }
+    }
+
+    private fun MapView.disableMultiMap() {
+        setScrollableAreaLimitDouble(BoundingBox(85.0, 180.0, -85.0, -180.0))
+        maxZoomLevel = 20.0
+        minZoomLevel = 4.0
+        isHorizontalMapRepetitionEnabled = false
+        isVerticalMapRepetitionEnabled = false
+        setScrollableAreaLimitLatitude(
+            MapView.getTileSystem().maxLatitude, MapView.getTileSystem().minLatitude, 0
+        )
     }
 }
